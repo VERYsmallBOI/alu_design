@@ -14,6 +14,8 @@ module alu #(
     output reg err;
     output reg [2*width-1:0] result;
 
+    reg [2*width-1:0] res1;
+
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
 
@@ -27,14 +29,17 @@ reg mg;//multiplication going on
             g      <= 0;
             l      <= 0;
             e      <= 0;
-            mg     <= 1;
+            mg     <= 0;
+            res1<=0;
         end else begin
             if (ce) begin
                 g      <= 0;
                 l      <= 0;
                 e      <= 0;
                 result <= 0;
-                mg     <= (count==0)?1:mg;
+                res1<=0;
+                count<=(cmd==4'd10||cmd==4'd9)?count:0;
+                mg     <= (count!=0)?mg:0;
                 if (mode) begin
                     case (cmd)
                         0: begin
@@ -62,21 +67,33 @@ reg mg;//multiplication going on
                         begin
                         if(count>=2'd2)
                         begin
-                            result<=(opa+1'b1)*(opb+1'b1);
+                            result<=res1;
                             count<=0;
-                            mg=(inp_valid==2'b11);
+                            
                         end
-                        else count<=count+1'b1;
+                        else if(count==0)
+                        begin
+                        mg<=(inp_valid!=2'b11);
+                        res1<=(opa+1'b1)*(opb+1'b1);
+                        count<=count+1'b1;
+                        end
+                        else count<=(cmd=='d9)?count+1'b1:1'b1;
                         end
                         10:
                         begin
                         if(count>=2'd2)
                         begin
-                            result<=(opa<<1'b1)*(opb);
+                            result<=res1;
                             count<=0;
-                            mg=(inp_valid==2'b11);
+                            
                         end
-                        else count<=count+1'b1;
+                        else if(count==0)
+                        begin
+                        mg<=(inp_valid!=2'b11);
+                        res1<=(opa<<1'b1)*(opb);
+                        count<=count+1'b1;
+                        end
+                        else count<=(cmd=='d10)?count+1'b1:1'b1;
                         end
                         11: 
                         begin
@@ -134,7 +151,7 @@ reg mg;//multiplication going on
         if(rst)
         err<=0;
         else
-        err<=(mg)&(inp_valid==11);
+        err<=((mg)&&(count==2'd2))||((inp_valid!=2'b11)&(cmd!=4'd10||cmd!=4'd9))||((cmd==12||cmd==13)&(~mode)&(opb>((1 << $clog2(width)) - 1)));
     end
 
 
