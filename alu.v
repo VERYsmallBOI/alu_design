@@ -2,7 +2,7 @@ module alu #(
     parameter width = 8,
     cwidth = 4
 ) (
-    clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, res, offlow, cout, g, l, e
+    clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, result, offlow, cout, g, l, e
 );
     //change after finishing all result to res
     input wire clk, rst, inp_valid, mode, ce, cin;
@@ -11,7 +11,7 @@ module alu #(
     output reg g, l, e;
     output wire cout, offlow;
     output wire err;
-    output [2*width-1:0] result;
+    output reg [2*width-1:0] result;
 
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
@@ -53,10 +53,24 @@ module alu #(
                             l <= (opa < opb);
                             e <= (opa == opb);
                         end
-                        9: ;
-                        10: ;
-                        11: result <= $signed{opa} + $signed{opb};
-                        12: result <= $signed{opa} - $signed{opb};
+                        9: 
+                        result<=(opa+1)*(opb+1);
+
+                        10: result<=(opa<<1)*(opb);
+                        11: 
+                        begin
+                            g <= (opa > opb);
+                            l <= (opa < opb);
+                            e <= (opa == opb);
+                            result <= $signed(opa) + $signed(opb);
+                        end
+                        
+                        12:  begin
+                            g <= (opa > opb);
+                            l <= (opa < opb);
+                            e <= (opa == opb);
+                            result <= $signed(opa) - $signed(opb);
+                        end
                         default: result <= 0;
                     endcase
                 end else begin
