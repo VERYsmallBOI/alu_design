@@ -22,7 +22,7 @@ reg [cwidth-1:0]cmdo;
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
 
-reg mg,i0,i1;//
+reg mg,i0,i1;
 reg [2*width-1:0] s0,s1;
 
     reg [1:0] count;
@@ -81,7 +81,7 @@ reg [2*width-1:0] s0,s1;
                             begin
                             s1<=s0;
                             i1<=i0;
-                            mg<=1;
+                            mg<=i1;
                             res<=s1;
                             
 
@@ -89,7 +89,7 @@ reg [2*width-1:0] s0,s1;
                             2'd0:
                             begin
                             s0<=(opa+1'b1)*(opb+1'b1);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             count<=1;
                             end
                             2'd1:
@@ -98,7 +98,7 @@ reg [2*width-1:0] s0,s1;
                             begin
                             count<=1;
                             s0<=(opa+1'b1)*(opb+1'b1);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             end
                             else
                             count<=2;
@@ -106,7 +106,7 @@ reg [2*width-1:0] s0,s1;
                             default:
                             begin
                             s0<=(opa+1'b1)*(opb+1'b1);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             if(cmd!=cmdo)
                             count<=1;
                             else count<=0;
@@ -117,7 +117,7 @@ reg [2*width-1:0] s0,s1;
                         begin
                             s1<=s0;
                             i1<=i0;
-                            mg<=1;
+                            mg<=i1;
                             res<=s1;
                             
 
@@ -125,7 +125,7 @@ reg [2*width-1:0] s0,s1;
                             2'd0:
                             begin
                             s0<=(opa<<1'b1)*(opb);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             count<=1;
                             end
                             2'd1:
@@ -134,7 +134,7 @@ reg [2*width-1:0] s0,s1;
                             begin
                             count<=1;
                             s0<=(opa<<1'b1)*(opb);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             end
                             else
                             count<=2;
@@ -142,7 +142,7 @@ reg [2*width-1:0] s0,s1;
                             default:
                             begin
                             s0<=(opa<<1'b1)*(opb);
-                            i0<=(inp_valid!=2'b1);
+                            i0<=(inp_valid!=2'b11);
                             if(cmd!=cmdo)
                             count<=1;
                             else count<=0;
