@@ -4,12 +4,13 @@ module alu #(
 ) (
     clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, res, offlow, cout, g, l, e
 );
-    //change after finishing all res to res
+    //change after finishing all res1 to res1
     input wire clk, rst, mode, ce, cin;
     input wire [1:0]inp_valid;
     input wire [width-1:0] opa, opb;
     input wire [cwidth-1:0] cmd;
     output reg g, l, e;
+    reg g1, l1, e1;
     output wire cout, offlow;
     output reg err;
     output reg [2*width-1:0] res;
@@ -18,38 +19,46 @@ reg [cwidth-1:0]cmdo;
 
 
 
+reg [2*width-1:0] res1;
+
 
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
 
 reg mg,i0,i1;
-reg [2*width-1:0] s0,s1;
+reg [2*width-1:0] s0;
 
     reg [1:0] count;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
-            res <= 0;
+            res1 <= 0;
             g      <= 0;
             l      <= 0;
             e      <= 0;
+            g1      <= 0;
+            l1      <= 0;
+            e1      <= 0;
             mg     <= 0;
             s0<=0;
-            s1<=0;
             i0<=0;
             i1<=0;
             cmdo<=0;
+            res<=0;
             
         end else begin
             if (ce) begin
-                g      <= 0;
-                l      <= 0;
-                e      <= 0;
-                res <= 0;
+                 g      <= g1;
+            l      <= l1;
+            e      <= e1;
+            g1      <= 0;
+            l1      <= 0;
+            e1      <= 0;
+                res1 <= 0;
                 s0<=0;
-                s1<=0;
                 i0<=0;
                 i1<=0;
+                res<=res1;
 
                 count<=0;
                 mg     <= 0;
@@ -57,32 +66,32 @@ reg [2*width-1:0] s0,s1;
                 if (mode) begin
                     case (cmd)
                         0: begin
-                            res <= opa + opb;
+                            res1 <= opa + opb;
                         end
                         1: begin
-                            res <= opa - opb;
+                            res1 <= opa - opb;
                         end
                         2: begin
-                            res <= cin + opa + opb;
+                            res1 <= cin + opa + opb;
                         end
                         3: begin
-                            res <= opa - opb - cin;
+                            res1 <= opa - opb - cin;
                         end
-                        4: res <= opa + 1'b1;
-                        5: res <= opa - 1'b1;
-                        6: res <= opb + 1'b1;
-                        7: res <= opb - 1'b1; 
+                        4: res1 <= opa + 1'b1;
+                        5: res1 <= opa - 1'b1;
+                        6: res1 <= opb + 1'b1;
+                        7: res1 <= opb - 1'b1; 
                         8: begin
-                            g <= (opa > opb);
-                            l <= (opa < opb);
-                            e <= (opa == opb);
+                            g1 <= (opa > opb);
+                            l1 <= (opa < opb);
+                            e1 <= (opa == opb);
                         end
                             9: 
                             begin
-                            s1<=s0;
+                            res1<=s0;
                             i1<=i0;
                             mg<=i1;
-                            res<=s1;
+                           
                             
 
                             case(count)
@@ -107,7 +116,7 @@ reg [2*width-1:0] s0,s1;
                             begin
                             s0<=(opa+1'b1)*(opb+1'b1);
                             i0<=(inp_valid!=2'b11);
-                            if(cmd!=cmdo)
+                            if(cmd==cmdo)
                             count<=1;
                             else count<=0;
                             end
@@ -115,10 +124,10 @@ reg [2*width-1:0] s0,s1;
                             end
                         10:
                         begin
-                            s1<=s0;
+                            res1<=s0;
                             i1<=i0;
                             mg<=i1;
-                            res<=s1;
+                            
                             
 
                             case(count)
@@ -143,7 +152,7 @@ reg [2*width-1:0] s0,s1;
                             begin
                             s0<=(opa<<1'b1)*(opb);
                             i0<=(inp_valid!=2'b11);
-                            if(cmd!=cmdo)
+                            if(cmd==cmdo)
                             count<=1;
                             else count<=0;
                             end
@@ -151,37 +160,37 @@ reg [2*width-1:0] s0,s1;
                             end
                         11: 
                         begin
-                            g <= ($signed(opa) > $signed(opb));
-                            l <= ($signed(opa) < $signed(opb));
-                            e <= ($signed(opa) == $signed(opb));
-                            res <= $signed(opa) + $signed(opb);
+                            g1 <= ($signed(opa) > $signed(opb));
+                            l1 <= ($signed(opa) < $signed(opb));
+                            e1 <= ($signed(opa) == $signed(opb));
+                            res1 <= $signed(opa) + $signed(opb);
                         end
                         
                         12:  begin
-                            g <= ($signed(opa) > $signed(opb));
-                            l <= ($signed(opa) < $signed(opb));
-                            e <= ($signed(opa) == $signed(opb));
-                            res <= $signed(opa) - $signed(opb);
+                            g1 <= ($signed(opa) > $signed(opb));
+                            l1 <= ($signed(opa) < $signed(opb));
+                            e1 <= ($signed(opa) == $signed(opb));
+                            res1 <= $signed(opa) - $signed(opb);
                         end
-                        default: res <= 0;
+                        default: res1 <= 0;
                     endcase
                 end else begin
                     case (cmd)
-                        0:       res <= opa & opb;
-                        1:       res <= ~(opa & opb);
-                        2:       res <= opa | opb;
-                        3:       res <= ~(opa | opb);
-                        4:       res <= opa ^ opb;
-                        5:       res <= (opa ~^ opb);
-                        6:       res <= ~opa;
-                        7:       res <= ~opb;
-                        8:       res <= opa >> 1;
-                        9:       res <= opa << 1;
-                        10:      res <= opb >> 1;
-                        11:      res <= opb << 1;
-                        12:      res <= (((1 << width) - 1) & ((opa >> (width - opb[$clog2(width):0])) | (opa << (opb[$clog2(width):0]))));
-                        13:      res <= (((1 << width) - 1) & ((opa << (width - opb[$clog2(width):0])) | (opa >> (opb[$clog2(width):0]))));
-                        default: res <= 0;
+                        0:       res1 <= opa & opb;
+                        1:       res1 <= ~(opa & opb);
+                        2:       res1 <= opa | opb;
+                        3:       res1 <= ~(opa | opb);
+                        4:       res1 <= opa ^ opb;
+                        5:       res1 <= (opa ~^ opb);
+                        6:       res1 <= ~opa;
+                        7:       res1 <= ~opb;
+                        8:       res1 <= opa >> 1;
+                        9:       res1 <= opa << 1;
+                        10:      res1 <= opb >> 1;
+                        11:      res1 <= opb << 1;
+                        12:      res1 <= (((1 << width) - 1) & ((opa >> (width - opb[$clog2(width):0])) | (opa << (opb[$clog2(width):0]))));
+                        13:      res1 <= (((1 << width) - 1) & ((opa << (width - opb[$clog2(width):0])) | (opa >> (opb[$clog2(width):0]))));
+                        default: res1 <= 0;
                     endcase
                 end
             end
@@ -189,15 +198,15 @@ reg [2*width-1:0] s0,s1;
     end
 
     assign offlow = rst ? 0 : (
-        ((mode & (cmd == 11)) & (opa[width-1] == opb[width-1]) & (res[width-1] != (opa[width-1]))) ||
-        ((mode & (cmd == 12)) & (opa[width-1] != opb[width-1]) & (res[width-1] != (opa[width-1]))) ||
+        ((mode & (cmd == 11)) & (opa[width-1] == opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
+        ((mode & (cmd == 12)) & (opa[width-1] != opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
         ((mode & (cmd == 1)) & (opb > opa)) ||
         ((mode & (cmd == 3)) & ((opb + cin) > opa))
     );
 
     assign cout = rst ? 0 : (
-        (mode & (cmd == 0) & (res[width])) ||
-        (mode & (cmd == 2) & (res[width]))
+        (mode & (cmd == 0) & (res1[width])) ||
+        (mode & (cmd == 2) & (res1[width]))
     );
 
     always@(posedge clk,posedge rst)
