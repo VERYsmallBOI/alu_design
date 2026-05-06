@@ -14,12 +14,16 @@ module alu #(
     output reg err;
     output reg [2*width-1:0] res;
 
-    reg [2*width-1:0] res1;
+reg [cwidth-1:0]cmdo;
+
+
+
 
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
 
-reg mg;//
+reg mg,i0,i1;//
+reg [2*width-1:0] s0,s1;
 
     reg [1:0] count;
 
@@ -30,16 +34,26 @@ reg mg;//
             l      <= 0;
             e      <= 0;
             mg     <= 0;
-            res1<=0;
+            s0<=0;
+            s1<=0;
+            i0<=0;
+            i1<=0;
+            cmdo<=0;
+            
         end else begin
             if (ce) begin
                 g      <= 0;
                 l      <= 0;
                 e      <= 0;
                 res <= 0;
-                res1<=0;
-                count<=(cmd==4'd10||cmd==4'd9)?count:0;
-                mg     <= (count!=0)?mg:0;
+                s0<=0;
+                s1<=0;
+                i0<=0;
+                i1<=0;
+
+                count<=0;
+                mg     <= 0;
+                cmdo <= cmd;
                 if (mode) begin
                     case (cmd)
                         0: begin
@@ -57,56 +71,96 @@ reg mg;//
                         4: res <= opa + 1'b1;
                         5: res <= opa - 1'b1;
                         6: res <= opb + 1'b1;
-                        7: res <= opb - 1'b1;
+                        7: res <= opb - 1'b1; 
                         8: begin
                             g <= (opa > opb);
                             l <= (opa < opb);
                             e <= (opa == opb);
                         end
-                        9: 
-                        begin
-                        if(count>=2'd2)
-                        begin
-                            res<=res1;
-                            count<=0;
+                            9: 
+                            begin
+                            s1<=s0;
+                            i1<=i0;
+                            mg<=1;
+                            res<=s1;
                             
-                        end
-                        else if(count==0)
-                        begin
-                        mg<=(inp_valid!=2'b11);
-                        res1<=(opa+1'b1)*(opb+1'b1);
-                        count<=count+1'b1;
-                        end
-                        else count<=(cmd=='d9)?count+1'b1:1'b1;
-                        end
+
+                            case(count)
+                            2'd0:
+                            begin
+                            s0<=(opa+1'b1)*(opb+1'b1);
+                            i0<=(inp_valid!=2'b1);
+                            count<=1;
+                            end
+                            2'd1:
+                            begin
+                            if(cmdo!=cmd)
+                            begin
+                            count<=1;
+                            s0<=(opa+1'b1)*(opb+1'b1);
+                            i0<=(inp_valid!=2'b1);
+                            end
+                            else
+                            count<=2;
+                            end
+                            default:
+                            begin
+                            s0<=(opa+1'b1)*(opb+1'b1);
+                            i0<=(inp_valid!=2'b1);
+                            if(cmd!=cmdo)
+                            count<=1;
+                            else count<=0;
+                            end
+                            endcase
+                            end
                         10:
                         begin
-                        if(count>=2'd2)
-                        begin
-                            res<=res1;
-                            count<=0;
+                            s1<=s0;
+                            i1<=i0;
+                            mg<=1;
+                            res<=s1;
                             
-                        end
-                        else if(count==0)
-                        begin
-                        mg<=(inp_valid!=2'b11);
-                        res1<=(opa<<1'b1)*(opb);
-                        count<=count+1'b1;
-                        end
-                        else count<=(cmd=='d10)?count+1'b1:1'b1;
-                        end
+
+                            case(count)
+                            2'd0:
+                            begin
+                            s0<=(opa<<1'b1)*(opb);
+                            i0<=(inp_valid!=2'b1);
+                            count<=1;
+                            end
+                            2'd1:
+                            begin
+                            if(cmdo!=cmd)
+                            begin
+                            count<=1;
+                            s0<=(opa<<1'b1)*(opb);
+                            i0<=(inp_valid!=2'b1);
+                            end
+                            else
+                            count<=2;
+                            end
+                            default:
+                            begin
+                            s0<=(opa<<1'b1)*(opb);
+                            i0<=(inp_valid!=2'b1);
+                            if(cmd!=cmdo)
+                            count<=1;
+                            else count<=0;
+                            end
+                            endcase
+                            end
                         11: 
                         begin
-                            g <= (opa > opb);
-                            l <= (opa < opb);
-                            e <= (opa == opb);
+                            g <= ($signed(opa) > $signed(opb));
+                            l <= ($signed(opa) < $signed(opb));
+                            e <= ($signed(opa) == $signed(opb));
                             res <= $signed(opa) + $signed(opb);
                         end
                         
                         12:  begin
-                            g <= (opa > opb);
-                            l <= (opa < opb);
-                            e <= (opa == opb);
+                            g <= ($signed(opa) > $signed(opb));
+                            l <= ($signed(opa) < $signed(opb));
+                            e <= ($signed(opa) == $signed(opb));
                             res <= $signed(opa) - $signed(opb);
                         end
                         default: res <= 0;
@@ -151,8 +205,10 @@ reg mg;//
         if(rst)
         err<=0;
         else
-        err<=((mg)&&(count==2'd2))||((inp_valid!=2'b11)&(cmd!=4'd10||cmd!=4'd9))||((cmd==12||cmd==13)&(~mode)&(opb>((1 << $clog2(width)) - 1)));
+        err<=(mg)||((inp_valid!=2'b11)&(cmd!=4'd10||cmd!=4'd9))||((cmd==12||cmd==13)&(~mode)&(opb>((1 << $clog2(width)) - 1)));
     end
+
+
 
 
 endmodule
