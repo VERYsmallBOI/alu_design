@@ -2,7 +2,7 @@ module alu #(
     parameter width = 8,
     cwidth = 4
 ) (
-    clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, res, offlow, cout, g, l, e
+    clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, res, oflow, cout, g, l, e
 );
     //change after finishing all res1 to res1
     input wire clk, rst, mode, ce, cin;
@@ -11,7 +11,7 @@ module alu #(
     input wire [cwidth-1:0] cmd;
     output reg g, l, e;
     reg g1, l1, e1;
-    output wire cout, offlow;
+    output wire cout, oflow;
     output reg err;
     output reg [2*width-1:0] res;
 
@@ -175,7 +175,7 @@ module alu #(
         end
     end
 
-    assign offlow = rst ? 0 : (
+    assign oflow = rst ? 0 : (
         ((mode & (cmd == 11)) & (opa[width-1] == opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
         ((mode & (cmd == 12)) & (opa[width-1] != opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
         ((mode & (cmd == 1)) & (opb > opa)) ||
