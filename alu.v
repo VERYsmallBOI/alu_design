@@ -4,7 +4,6 @@ module alu #(
 ) (
     clk, rst, inp_valid, mode, cmd, ce, opa, opb, cin, err, res, oflow, cout, g, l, e
 );
-    //change after finishing all res1 to res1
     input wire clk, rst, mode, ce, cin;
     input wire [1:0] inp_valid;
     input wire [width-1:0] opa, opb;
@@ -21,9 +20,10 @@ module alu #(
     //cout for unsgined + and overflow for everyother
     //0 is driver default not z
 
-    reg mg, i0, i1;
+    reg mg, i0;
     reg [2*width-1:0] s0;
     reg [1:0] count;
+    reg err1;
 
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -37,7 +37,6 @@ module alu #(
             mg  <= 0;
             s0  <= 0;
             i0  <= 0;
-            i1  <= 0;
             cmdo<= 0;
             res <= 0;
         end else begin
@@ -51,7 +50,6 @@ module alu #(
                 res1<= 0;
                 s0  <= 0;
                 i0  <= 0;
-                i1  <= 0;
                 res <= res1;
 
                 count<= 0;
@@ -82,8 +80,7 @@ module alu #(
                         end
                         9: begin
                             res1 <= s0;
-                            i1   <= i0;
-                            mg   <= i1;
+                            mg   <= i0;
 
                             case (count)
                                 2'd0: begin
@@ -96,7 +93,8 @@ module alu #(
                                         count<= 1;
                                         s0   <= (opa + 1'b1) * (opb + 1'b1);
                                         i0   <= (inp_valid != 2'b11);
-                                    end else
+                                    end 
+                                    else
                                         count<= 2;
                                 end
                                 default: begin
@@ -111,8 +109,7 @@ module alu #(
                         end
                         10: begin
                             res1 <= s0;
-                            i1   <= i0;
-                            mg   <= i1;
+                            mg   <= i0;
 
                             case (count)
                                 2'd0: begin
@@ -125,7 +122,8 @@ module alu #(
                                         count<= 1;
                                         s0   <= (opa << 1'b1) * (opb);
                                         i0   <= (inp_valid != 2'b11);
-                                    end else
+                                    end 
+                                    else
                                         count<= 2;
                                 end
                                 default: begin
@@ -189,9 +187,15 @@ module alu #(
 
     always @(posedge clk, posedge rst) begin
         if (rst)
-            err <= 0;
+        begin
+            err1 <= 0;
+            err<=0;
+        end
         else
-            err <= (mg) || ((inp_valid != 2'b11) & (cmd != 4'd10 || cmd != 4'd9)) || ((cmd == 12 || cmd == 13) & (~mode) & (opb > ((1 << $clog2(width)) - 1)));
+        begin
+            err1 <= (mg) || ((inp_valid != 2'b11) & (cmd != 4'd10 || cmd != 4'd9)) || ((cmd == 12 || cmd == 13) & (~mode) & (opb > ((1 << $clog2(width)) - 1)));
+            err<=err1;
+        end
     end
 
 endmodule
