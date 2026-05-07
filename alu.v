@@ -10,10 +10,11 @@ module alu #(
     input wire [cwidth-1:0] cmd;
     output reg g, l, e;
     reg g1, l1, e1;
-    output wire cout, oflow;
+    output reg cout, oflow;
     output reg err;
     output reg [2*width-1:0] res;
 
+    wire oflow1,cout1;
     reg [cwidth-1:0] cmdo;
     reg [2*width-1:0] res1;
 
@@ -173,17 +174,24 @@ module alu #(
         end
     end
 
-    assign oflow = rst ? 0 : (
+    assign oflow1 = rst ? 0 : (
         ((mode & (cmd == 11)) & (opa[width-1] == opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
         ((mode & (cmd == 12)) & (opa[width-1] != opb[width-1]) & (res1[width-1] != (opa[width-1]))) ||
         ((mode & (cmd == 1)) & (opb > opa)) ||
         ((mode & (cmd == 3)) & ((opb + cin) > opa))
     );
 
-    assign cout = rst ? 0 : (
+    always@(posedge clk)
+    begin
+    oflow<=oflow1;
+    cout<=cout1;
+    end
+
+    assign cout1 = rst ? 0 : (
         (mode & (cmd == 0) & (res1[width])) ||
         (mode & (cmd == 2) & (res1[width]))
     );
+
 
     always @(posedge clk, posedge rst) begin
         if (rst)
