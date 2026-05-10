@@ -153,22 +153,22 @@ module alu #(
                     endcase
                 end else begin
                     case (cmd)
-                        0:       res1 <= opa & opb;
-                        1:       res1 <= ~(opa & opb);
-                        2:       res1 <= opa | opb;
-                        3:       res1 <= ~(opa | opb);
-                        4:       res1 <= opa ^ opb;
-                        5:       res1 <= (opa ~^ opb);
-                        6:       res1 <= ~opa;
-                        7:       res1 <= ~opb;
-                        8:       res1 <= opa >> 1;
-                        9:       res1 <= opa << 1;
-                        10:      res1 <= opb >> 1;
-                        11:      res1 <= opb << 1;
-                        12:      res1 <= (((1 << width) - 1) & ((opa >> (width - opb[$clog2(width):0])) | (opa << (opb[$clog2(width):0]))));
-                        13:      res1 <= (((1 << width) - 1) & ((opa << (width - opb[$clog2(width):0])) | (opa >> (opb[$clog2(width):0]))));
-                        default: res1 <= 0;
-                    endcase
+                            0:       res1 <= opa & opb;
+                            1:       res1 <= { {width{1'b0}}, ~(opa & opb) };
+                            2:       res1 <= opa | opb;
+                            3:       res1 <= { {width{1'b0}}, ~(opa | opb) };
+                            4:       res1 <= opa ^ opb;
+                            5:       res1 <= { {width{1'b0}}, (opa ~^ opb) };
+                            6:       res1 <= { {width{1'b0}}, ~opa };
+                            7:       res1 <= { {width{1'b0}}, ~opb };
+                            8:       res1 <= opa >> 1;              // shift results are 8‑bit, zero‑extended automatically
+                            9:       res1 <= opa << 1;
+                            10:      res1 <= opb >> 1;
+                            11:      res1 <= opb << 1;
+                            12:      res1 <= (((1 << width) - 1) & ((opa >> (width - opb[$clog2(width):0])) | (opa << (opb[$clog2(width):0]))));
+                            13:      res1 <= (((1 << width) - 1) & ((opa << (width - opb[$clog2(width):0])) | (opa >> (opb[$clog2(width):0]))));
+                            default: res1 <= 0;
+                        endcase
                 end
             end
         end
@@ -193,17 +193,32 @@ module alu #(
     );
 
 
-    always @(posedge clk, posedge rst) begin
-        if (rst)
-        begin
-            err1 <= 0;
-            err<=0;
-        end
-        else
-        begin
-            err1 <= (mg) || ((inp_valid != 2'b11) & (cmd != 4'd10 || cmd != 4'd9)) || ((cmd == 12 || cmd == 13) & (~mode) & (opb > ((1 << $clog2(width)) - 1)));
-            err<=err1;
-        end
+always @(posedge clk, posedge rst) begin
+    if (rst) begin
+        err1 <= 0;
+        err  <= 0;
+    end else begin
+        err1 <= (mg)
+            || ( (inp_valid != 2'b11)
+                 & !(
+                    ((mode  & (cmd == 'd4 || cmd == 'd5)) || (!mode & (cmd == 'd6 || cmd == 'd8 || cmd == 'd9)))
+                    ||
+                    ((mode  & (cmd == 'd6 || cmd == 'd7)) || (!mode & (cmd == 'd7 || cmd == 'd10 || cmd == 'd11)))
+                 )
+            )
+            || ( (cmd == 12 || cmd == 13) 
+                 & (~mode) 
+                 & (opb > ((1 << $clog2(width)) - 1)) 
+            )
+            || ( (!inp_valid[0]) 
+                 & ((mode & (cmd == 'd4 || cmd == 'd5)) || (!mode & (cmd == 'd6 || cmd == 'd8 || cmd == 'd9))) 
+            )
+            || ( (!inp_valid[1]) 
+                 & ((mode & (cmd == 'd6 || cmd == 'd7)) || (!mode & (cmd == 'd7 || cmd == 'd10 || cmd == 'd11))) 
+            );
+
+        err <= err1;
     end
+end
 
 endmodule
