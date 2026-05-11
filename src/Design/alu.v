@@ -70,10 +70,10 @@ module alu #(
                         3: begin
                             res1 <= opa - opb - cin;
                         end
-                        4: res1 <= (opa + 1'b1)&('HFF);
-                        5: res1 <= (opa - 1'b1)&('HFF);
-                        6: res1 <= (opb + 1'b1)&('HFF);
-                        7: res1 <= (opb - 1'b1)&('HFF);
+                        4: res1 <= (opa + 1'b1)&(((1 << width) - 1) );
+                        5: res1 <= (opa - 1'b1)&(((1 << width) - 1) );
+                        6: res1 <= (opb + 1'b1)&(((1 << width) - 1) );
+                        7: res1 <= (opb - 1'b1)&(((1 << width) - 1) );
                         8: begin
                             g1 <= (opa > opb);
                             l1 <= (opa < opb);
@@ -114,21 +114,21 @@ module alu #(
 
                             case (count)
                                 2'd0: begin
-                                    s0   <= ((opa << 1'b1)& 8'HFF ) * (opb);
+                                    s0   <= ((opa << 1'b1)& ((1 << width) - 1)  ) * (opb);
                                     i0   <= (inp_valid != 2'b11);
                                     count<= 1;
                                 end
                                 2'd1: begin
                                     if (cmdo != cmd) begin
                                         count<= 1;
-                                        s0   <= ((opa << 1'b1)& 8'HFF ) * (opb);
+                                        s0   <= ((opa << 1'b1)& ((1 << width) - 1)  ) * (opb);
                                         i0   <= (inp_valid != 2'b11);
                                     end 
                                     else
                                         count<= 2;
                                 end
                                 default: begin
-                                    s0   <= ((opa << 1'b1)& 8'HFF ) * (opb);
+                                    s0   <= ((opa << 1'b1)& ((1 << width) - 1)  ) * (opb);
                                     i0   <= (inp_valid != 2'b11);
                                     if (cmd == cmdo)
                                         count<= 1;
